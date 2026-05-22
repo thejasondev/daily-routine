@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F0F0E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daily Routine">
+<meta name="description" content="Tu horario diario personal, editable y siempre contigo">
+
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/icons/icon-192x192.svg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+<title>Daily Routine</title>
+
+<style>
+:root {
+  --bg: #0F0F0E;
+  --surface: #181816;
+  --surface2: #201F1C;
+  --border: rgba(232,224,207,0.08);
+  --border-hover: rgba(232,224,207,0.16);
+  --text: #E8E0CF;
+  --text-muted: rgba(232,224,207,0.45);
+  --text-dim: rgba(232,224,207,0.25);
+  --accent: #F5A623;
+  --accent-dim: rgba(245,166,35,0.12);
+  --accent-text: #1C1400;
+  --danger: #E05252;
+  --danger-dim: rgba(224,82,82,0.1);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-mono: 'DM Mono', monospace;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; background: var(--bg); }
+
+body {
+  font-family: var(--font-mono);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: calc(var(--safe-top) + 0px) 0 calc(var(--safe-bottom) + 80px);
+  overscroll-behavior: none;
+}
+
+/* ── HEADER ── */
+.app-header {
+  padding: 20px 20px 0;
+  margin-bottom: 4px;
+}
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo-icon {
+  width: 28px;
+  height: 28px;
+}
+.logo-text {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.header-date {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  text-align: right;
+  margin-top: 2px;
+}
+.header-title {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 2px;
+}
+.header-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+.header-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  margin-bottom: 20px;
+}
+
+/* ── PROGRESS BAR ── */
+.day-progress {
+  margin: 0 20px 24px;
+}
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.progress-track {
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+/* ── CURRENT BLOCK BANNER ── */
+.now-banner {
+  margin: 0 20px 20px;
+  background: var(--accent-dim);
+  border: 0.5px solid rgba(245,166,35,0.25);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  display: none;
+}
+.now-banner.visible { display: block; }
+.now-label {
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.now-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--text);
+}
+.now-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── BLOCKS LIST ── */
+.blocks-wrap {
+  padding: 0 20px;
+}
+
+.block-item {
+  position: relative;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.15s;
+  animation: slideIn 0.3s ease both;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.block-item:active { transform: scale(0.99); }
+.block-item.is-active {
+  border-color: rgba(245,166,35,0.3);
+}
+.block-item.is-past {
+  opacity: 0.45;
+}
+
+.block-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.block-accent {
+  width: 3px;
+  height: 36px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: height 0.2s;
+}
+.block-item.is-active .block-accent {
+  height: 44px;
+}
+.block-body {
+  flex: 1;
+  min-width: 0;
+}
+.block-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.block-time-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+.block-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+.block-duration {
+  font-size: 10px;
+  color: var(--text-dim);
+  background: var(--surface2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.block-edit-icon {
+  color: var(--text-dim);
+  font-size: 15px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.block-item:hover .block-edit-icon { color: var(--text-muted); }
+
+/* ── INLINE EDITOR ── */
+.block-editor {
+  display: none;
+  padding: 0 14px 14px;
+  border-top: 0.5px solid var(--border);
+  animation: expandIn 0.2s ease;
+}
+@keyframes expandIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.block-editor.open { display: block; }
+
+.field {
+  margin-bottom: 10px;
+}
+.field-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.field input[type="text"],
+.field input[type="time"] {
+  width: 100%;
+  background: var(--surface2);
+  border: 0.5px solid var(--border-hover);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+  color-scheme: dark;
+}
+.field input:focus {
+  border-color: var(--accent);
+}
+.time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.color-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.color-swatch:active { transform: scale(0.9); }
+.color-swatch.sel {
+  border-color: var(--text);
+  transform: scale(1.15);
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.btn-save {
+  flex: 1;
+  background: var(--accent);
+  color: var(--accent-text);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-save:active { opacity: 0.8; }
+
+.btn-del {
+  background: var(--danger-dim);
+  color: var(--danger);
+  border: 0.5px solid rgba(224,82,82,0.2);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-del:active { opacity: 0.8; }
+
+/* Confirm delete */
+.confirm-del {
+  display: none;
+  margin-top: 8px;
+  background: var(--danger-dim);
+  border: 0.5px solid rgba(224,82,82,0.25);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.confirm-del.visible { display: block; }
+.confirm-text {
+  font-size: 12px;
+  color: var(--danger);
+  margin-bottom: 8px;
+}
+.confirm-btns {
+  display: flex;
+  gap: 8px;
+}
+.btn-confirm-yes {
+  flex: 1;
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-confirm-no {
+  flex: 1;
+  background: var(--surface2);
+  color: var(--text-muted);
+  border: 0.5px solid var(--border-hover);
+  border-radius: 6px;
+  padding: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* ── FAB ── */
+.fab {
+  position: fixed;
+  bottom: calc(var(--safe-bottom) + 24px);
+  right: 20px;
+  width: 52px;
+  height: 52px;
+  background: var(--accent);
+  color: var(--accent-text);
+  border: none;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 24px rgba(245,166,35,0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 100;
+}
+.fab:active {
+  transform: scale(0.92);
+  box-shadow: 0 2px 12px rgba(245,166,35,0.25);
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  display: none;
+}
+.empty-state.visible { display: block; }
+.empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.3;
+}
+.empty-text {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: calc(var(--safe-bottom) + 88px);
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface2);
+  border: 0.5px solid var(--border-hover);
+  color: var(--text);
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 200;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── DIVIDER ── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+.divider-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.divider-line {
+  flex: 1;
+  height: 0.5px;
+  background: var(--border);
+}
+
+/* scrollbar */
+::-webkit-scrollbar { display: none; }
+
+/* ── PWA INSTALL PROMPT ── */
+.install-banner {
+  margin: 0 20px 16px;
+  background: var(--surface);
+  border: 0.5px solid var(--border-hover);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+}
+.install-banner.visible { display: flex; }
+.install-text {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.install-text strong {
+  color: var(--text);
+  font-weight: 400;
+  display: block;
+  margin-bottom: 2px;
+}
+.btn-install {
+  background: var(--accent);
+  color: var(--accent-text);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-top">
+    <div class="logo-mark">
+      <svg class="logo-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="28" height="28" rx="7" fill="#1C1B18"/>
+        <rect x="7" y="9" width="14" height="2.5" rx="1.25" fill="#E8E0CF" opacity="0.85"/>
+        <rect x="7" y="13.5" width="9" height="2" rx="1" fill="#E8E0CF" opacity="0.45"/>
+        <rect x="7" y="17.5" width="11" height="2" rx="1" fill="#E8E0CF" opacity="0.45"/>
+        <circle cx="5" cy="10.25" r="1.5" fill="#F5A623"/>
+        <circle cx="5" cy="14.5" r="1.1" fill="#E8E0CF" opacity="0.3"/>
+        <circle cx="5" cy="18.5" r="1.1" fill="#E8E0CF" opacity="0.3"/>
+      </svg>
+      <span class="logo-text">Daily Routine</span>
+    </div>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+  <h1 class="header-title">Tu <em>rutina,</em><br>tu ritmo</h1>
+  <p class="header-sub">HORARIO PERSONAL · EDITABLE · OFFLINE</p>
+</header>
+
+<div class="day-progress" role="progressbar" aria-label="Progreso del día">
+  <div class="progress-label">
+    <span>INICIO DEL DÍA</span>
+    <span id="progressPct">0%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="now-banner" id="nowBanner" aria-live="polite">
+  <div class="now-label">⬤ AHORA</div>
+  <div class="now-name" id="nowName">—</div>
+  <div class="now-time" id="nowTime">—</div>
+</div>
+
+<div class="install-banner" id="installBanner">
+  <div class="install-text">
+    <strong>Agregar a inicio</strong>
+    Instala Daily Routine para acceso rápido sin abrir el navegador
+  </div>
+  <button class="btn-install" id="btnInstall">Instalar</button>
+  <button class="btn-dismiss" id="btnDismiss" aria-label="Cerrar">✕</button>
+</div>
+
+<main class="blocks-wrap" id="blocksList" role="list" aria-label="Bloques de rutina"></main>
+
+<div class="empty-state" id="emptyState" aria-live="polite">
+  <div class="empty-icon">◎</div>
+  <p class="empty-text">Sin bloques todavía.<br>Toca + para añadir tu primera actividad.</p>
+</div>
+
+<button class="fab" id="fabAdd" aria-label="Añadir bloque">+</button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ── DEFAULTS ── */
+const DEFAULT_BLOCKS = [
+  {id:1,  name:'Despertar',                    start:'7:30',  end:'8:30',  color:'#3EB87A'},
+  {id:2,  name:'Desayuno',                     start:'8:30',  end:'9:00',  color:'#F5A623'},
+  {id:3,  name:'Estudio alemán',               start:'9:00',  end:'10:30', color:'#9B8EE8'},
+  {id:4,  name:'Snack',                        start:'10:30', end:'11:30', color:'#F5A623'},
+  {id:5,  name:'Gym',                          start:'11:30', end:'13:00', color:'#E05252'},
+  {id:6,  name:'Almuerzo',                     start:'13:00', end:'13:30', color:'#F5A623'},
+  {id:7,  name:'Estudio inglés',               start:'14:45', end:'16:30', color:'#9B8EE8'},
+  {id:8,  name:'Redes sociales & programación',start:'16:30', end:'17:30', color:'#5B9CF6'},
+  {id:9,  name:'Merienda',                     start:'17:30', end:'18:30', color:'#F5A623'},
+  {id:10, name:'Caminata',                     start:'18:30', end:'20:30', color:'#3EB87A'},
+  {id:11, name:'Comida',                       start:'20:30', end:'21:30', color:'#F5A623'},
+  {id:12, name:'Descanso & sueño',             start:'23:00', end:'7:30',  color:'#888780'},
+];
+
+const PALETTE = [
+  '#F5A623','#E05252','#3EB87A','#9B8EE8',
+  '#5B9CF6','#E8738A','#4ECDC4','#888780',
+  '#F7C948','#A78BFA',
+];
+
+const STORAGE_KEY = 'dailyflow_blocks_v2';
+
+/* ── STATE ── */
+let blocks = [];
+let nextId = 100;
+let openId = null;
+let confirmId = null;
+
+/* ── PERSIST ── */
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) {
+        blocks = parsed;
+        nextId = Math.max(...blocks.map(b => b.id)) + 1;
+        return;
+      }
+    }
+  } catch(e) {}
+  blocks = DEFAULT_BLOCKS.map(b => ({...b}));
+  nextId = 20;
+  save();
+}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(blocks)); } catch(e) {}
+}
+
+/* ── TIME UTILS ── */
+function toMins(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+function fromMins(m) {
+  const h = Math.floor(m / 60) % 24;
+  const mm = m % 60;
+  return `${h}:${mm.toString().padStart(2,'0')}`;
+}
+function fmt12(t) {
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hh = h % 12 || 12;
+  return `${hh}:${m.toString().padStart(2,'0')} ${ampm}`;
+}
+function durationLabel(start, end) {
+  let s = toMins(start), e = toMins(end);
+  if (e <= s) e += 24 * 60;
+  const d = e - s;
+  if (d < 60) return `${d}min`;
+  const h = Math.floor(d / 60), mm = d % 60;
+  return mm ? `${h}h ${mm}m` : `${h}h`;
+}
+function toTimeInput(t) {
+  const [h, m] = t.split(':');
+  return `${h.toString().padStart(2,'0')}:${(m||'00').padStart(2,'0')}`;
+}
+function fromTimeInput(v) {
+  const [h, m] = v.split(':');
+  return `${parseInt(h)}:${m}`;
+}
+
+/* ── CURRENT BLOCK ── */
+function nowMins() {
+  const n = new Date();
+  return n.getHours() * 60 + n.getMinutes();
+}
+function isActive(b) {
+  const now = nowMins();
+  let s = toMins(b.start), e = toMins(b.end);
+  if (e <= s) { // overnight
+    return now >= s || now < e;
+  }
+  return now >= s && now < e;
+}
+function isPast(b) {
+  const now = nowMins();
+  let e = toMins(b.end);
+  if (toMins(b.end) <= toMins(b.start)) return false; // overnight, never past
+  return now >= e;
+}
+
+/* ── PROGRESS ── */
+function updateProgress() {
+  const now = nowMins();
+  const total = 24 * 60;
+  const pct = Math.round((now / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+
+  // current block banner
+  const active = blocks.find(isActive);
+  const banner = document.getElementById('nowBanner');
+  if (active) {
+    document.getElementById('nowName').textContent = active.name;
+    document.getElementById('nowTime').textContent = fmt12(active.start) + ' — ' + fmt12(active.end);
+    banner.classList.add('visible');
+  } else {
+    banner.classList.remove('visible');
+  }
+}
+
+/* ── DATE ── */
+function updateDate() {
+  const d = new Date();
+  const days = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+  const months = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  document.getElementById('headerDate').textContent =
+    `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+}
+
+/* ── RENDER ── */
+function render() {
+  const list = document.getElementById('blocksList');
+  const empty = document.getElementById('emptyState');
+
+  if (!blocks.length) {
+    list.innerHTML = '';
+    empty.classList.add('visible');
+    return;
+  }
+  empty.classList.remove('visible');
+
+  list.innerHTML = blocks.map((b, i) => {
+    const active = isActive(b);
+    const past = isPast(b);
+    const edOpen = openId === b.id;
+    const confOpen = confirmId === b.id;
+
+    const classes = ['block-item'];
+    if (active) classes.push('is-active');
+    if (past && !active) classes.push('is-past');
+
+    return `
+<div class="${classes.join(' ')}" id="blk-${b.id}" role="listitem" style="animation-delay:${i * 0.04}s">
+  <div class="block-main" onclick="toggleEdit(${b.id})" role="button" tabindex="0"
+       aria-expanded="${edOpen}" aria-label="Editar ${b.name}">
+    <div class="block-accent" style="background:${b.color}"></div>
+    <div class="block-body">
+      <div class="block-name">${escHtml(b.name)}</div>
+      <div class="block-time-row">
+        <span class="block-time">${fmt12(b.start)} — ${fmt12(b.end)}</span>
+        <span class="block-duration">${durationLabel(b.start, b.end)}</span>
+      </div>
+    </div>
+    <span class="block-edit-icon" aria-hidden="true">${edOpen ? '↑' : '↓'}</span>
+  </div>
+  <div class="block-editor ${edOpen ? 'open' : ''}" id="ed-${b.id}">
+    <div class="field">
+      <div class="field-label">Actividad</div>
+      <input type="text" id="n-${b.id}" value="${escAttr(b.name)}" placeholder="Nombre" maxlength="40">
+    </div>
+    <div class="field">
+      <div class="field-label">Horario</div>
+      <div class="time-row">
+        <input type="time" id="s-${b.id}" value="${toTimeInput(b.start)}" aria-label="Hora inicio">
+        <input type="time" id="e-${b.id}" value="${toTimeInput(b.end)}" aria-label="Hora fin">
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">Color</div>
+      <div class="color-row">
+        ${PALETTE.map(c => `<span class="color-swatch${b.color===c?' sel':''}" style="background:${c}"
+          onclick="pickColor(${b.id},'${c}')" role="radio" aria-checked="${b.color===c}" aria-label="Color ${c}"></span>`).join('')}
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-save" onclick="saveBlock(${b.id})">GUARDAR</button>
+      <button class="btn-del" onclick="askDelete(${b.id})" aria-label="Eliminar bloque">✕</button>
+    </div>
+    <div class="confirm-del ${confOpen ? 'visible' : ''}" id="conf-${b.id}" role="alertdialog">
+      <div class="confirm-text">¿Eliminar «${escHtml(b.name)}»?</div>
+      <div class="confirm-btns">
+        <button class="btn-confirm-no" onclick="cancelDelete(${b.id})">Cancelar</button>
+        <button class="btn-confirm-yes" onclick="doDelete(${b.id})">Sí, eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+  }).join('');
+
+  updateProgress();
+}
+
+/* ── HELPERS ── */
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return s.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ── ACTIONS ── */
+function toggleEdit(id) {
+  confirmId = null;
+  openId = openId === id ? null : id;
+  render();
+  if (openId) {
+    setTimeout(() => {
+      const el = document.getElementById(`ed-${id}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 60);
+  }
+}
+
+function pickColor(id, color) {
+  const b = blocks.find(x => x.id === id);
+  if (b) { b.color = color; openId = id; render(); }
+}
+
+function saveBlock(id) {
+  const b = blocks.find(x => x.id === id);
+  if (!b) return;
+  const name = document.getElementById(`n-${id}`).value.trim();
+  const s = document.getElementById(`s-${id}`).value;
+  const e = document.getElementById(`e-${id}`).value;
+  if (!name) { showToast('El nombre no puede estar vacío'); return; }
+  b.name = name;
+  b.start = fromTimeInput(s);
+  b.end = fromTimeInput(e);
+  openId = null;
+  confirmId = null;
+  save();
+  render();
+  showToast('Guardado ✓');
+}
+
+function askDelete(id) {
+  confirmId = id;
+  openId = id;
+  render();
+}
+function cancelDelete(id) {
+  confirmId = null;
+  render();
+}
+function doDelete(id) {
+  blocks = blocks.filter(x => x.id !== id);
+  openId = null;
+  confirmId = null;
+  save();
+  render();
+  showToast('Bloque eliminado');
+}
+
+function addBlock() {
+  const b = { id: nextId++, name: 'Nueva actividad', start: '12:00', end: '13:00', color: '#9B8EE8' };
+  blocks.push(b);
+  openId = b.id;
+  save();
+  render();
+  setTimeout(() => {
+    const el = document.getElementById(`ed-${b.id}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const ni = document.getElementById(`n-${b.id}`);
+    if (ni) { ni.select(); }
+  }, 80);
+}
+
+/* ── TOAST ── */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+/* ── PWA INSTALL ── */
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Only show if not dismissed before
+  if (!localStorage.getItem('install_dismissed')) {
+    document.getElementById('installBanner').classList.add('visible');
+  }
+});
+document.getElementById('btnInstall').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').classList.remove('visible');
+});
+document.getElementById('btnDismiss').addEventListener('click', () => {
+  document.getElementById('installBanner').classList.remove('visible');
+  localStorage.setItem('install_dismissed', '1');
+});
+
+/* ── FAB ── */
+document.getElementById('fabAdd').addEventListener('click', addBlock);
+
+/* ── KEYBOARD ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && openId) { openId = null; confirmId = null; render(); }
+});
+
+/* ── SERVICE WORKER ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW:', err));
+  });
+}
+
+/* ── INIT ── */
+load();
+updateDate();
+render();
+setInterval(updateProgress, 60000);
+</script>
+</body>
+</html>
