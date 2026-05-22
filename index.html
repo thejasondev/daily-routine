@@ -1076,16 +1076,15 @@ function getOverlappingIds() {
 }
 
 function getTotalFreeTime() {
-  let total = 0;
-  for (let i = 0; i < blocks.length - 1; i++) {
-    const a = blocks[i], b = blocks[i + 1];
-    const aS = toMins(a.start), aE = toMins(a.end);
-    const bS = toMins(b.start), bE = toMins(b.end);
-    if (aE <= aS || bE <= bS) continue;
-    const gap = bS - aE;
-    if (gap > 0) total += gap;
+  const FULL_DAY = 24 * 60;
+  let planned = 0;
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    let s = toMins(b.start), e = toMins(b.end);
+    if (e <= s) e += FULL_DAY; // overnight block
+    planned += (e - s);
   }
-  return total;
+  return Math.max(0, FULL_DAY - planned);
 }
 
 function fmtGap(mins) {
@@ -1425,9 +1424,21 @@ function render() {
 
     if (i > 0) {
       const prev = blocks[i-1];
-      const pE = toMins(prev.end), pS = toMins(prev.start);
-      const bS = toMins(b.start);
-      if (pE > pS) {
+      let pE = toMins(prev.end);
+      const pS = toMins(prev.start);
+      // For overnight blocks, the effective end for gap purposes
+      // is the end time itself (e.g. 7:30 AM), which is already < pS
+      // but still the correct "gap start" for the next block
+      if (pE <= pS) {
+        // overnight block — gap from pE (early morning end) to next block start
+        // only show if next block starts after the overnight end
+        const bS = toMins(b.start);
+        const gap = bS - pE;
+        if (gap > 0) {
+          html += `<div class="gap-indicator"><span class="gap-pill">${fmtGap(gap)} libre</span></div>`;
+        }
+      } else {
+        const bS = toMins(b.start);
         const gap = bS - pE;
         if (gap > 0) {
           html += `<div class="gap-indicator"><span class="gap-pill">${fmtGap(gap)} libre</span></div>`;
