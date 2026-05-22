@@ -1041,6 +1041,8 @@ function load() {
 }
 
 function save() {
+  // Safety net: always sync blocks back to allBlocks before persisting
+  allBlocks[selectedDay] = blocks;
   try { localStorage.setItem(STORAGE_KEY_V3, JSON.stringify(allBlocks)); } catch(e) {}
   scheduleNotifications();
 }
@@ -1578,7 +1580,8 @@ function cancelDelete(id) {
   render();
 }
 function doDelete(id) {
-  blocks = blocks.filter(x => x.id !== id);
+  const idx = blocks.findIndex(x => x.id === id);
+  if (idx !== -1) blocks.splice(idx, 1);
   openId = null;
   confirmId = null;
   save();
