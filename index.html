@@ -627,6 +627,7 @@ function load() {
       if (Array.isArray(parsed) && parsed.length) {
         blocks = parsed;
         nextId = Math.max(...blocks.map(b => b.id)) + 1;
+        sortBlocks();
         return;
       }
     }
@@ -638,6 +639,23 @@ function load() {
 
 function save() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(blocks)); } catch(e) {}
+}
+
+/* ── SORT BY START TIME ── */
+function sortBlocks() {
+  blocks.sort((a, b) => {
+    const aStart = toMins(a.start);
+    const bStart = toMins(b.start);
+    const aEnd = toMins(a.end);
+    const bEnd = toMins(b.end);
+    // Overnight blocks (end <= start) go last
+    const aOvernight = aEnd <= aStart ? 1 : 0;
+    const bOvernight = bEnd <= bStart ? 1 : 0;
+    if (aOvernight !== bOvernight) return aOvernight - bOvernight;
+    // Same category: sort by start time, then by end time
+    if (aStart !== bStart) return aStart - bStart;
+    return aEnd - bEnd;
+  });
 }
 
 /* ── TIME UTILS ── */
@@ -833,6 +851,7 @@ function saveBlock(id) {
   b.end = fromTimeInput(e);
   openId = null;
   confirmId = null;
+  sortBlocks();
   save();
   render();
   showToast('Guardado ✓');
@@ -860,6 +879,7 @@ function addBlock() {
   const b = { id: nextId++, name: 'Nueva actividad', start: '12:00', end: '13:00', color: '#9B8EE8' };
   blocks.push(b);
   openId = b.id;
+  sortBlocks();
   save();
   render();
   setTimeout(() => {
