@@ -965,6 +965,7 @@ let blocks = [];
 let nextId = 100;
 let openId = null;
 let confirmId = null;
+let draftBlock = null; // block being created, not yet committed
 
 /* ── DAY SELECTOR ── */
 function updateDaySelectorUI() {
@@ -1513,8 +1514,57 @@ function render() {
   </div>
 </div>`;
   }
+
+  // Draft block editor (not yet committed)
+  if (draftBlock) {
+    const db = draftBlock;
+    html += `
+<div class="block-item" style="border-color: var(--accent); border-style: dashed; animation-delay:0s">
+  <div class="block-main" style="pointer-events:none;">
+    <div class="block-accent" style="background:${db.color}"></div>
+    <div class="block-body">
+      <div class="block-name" style="color:var(--accent)">Nueva actividad</div>
+      <div class="block-time-row">
+        <span class="block-time" style="opacity:0.5">Configura los detalles abajo</span>
+      </div>
+    </div>
+  </div>
+  <div class="block-editor open" id="ed-draft">
+    <div class="field">
+      <div class="field-label">Actividad</div>
+      <input type="text" id="n-draft" value="${escAttr(db.name)}" placeholder="Nombre de la actividad" maxlength="40">
+    </div>
+    <div class="field">
+      <div class="field-label">Horario</div>
+      <div class="time-row">
+        <input type="time" id="s-draft" value="${toTimeInput(db.start)}" aria-label="Hora inicio">
+        <input type="time" id="e-draft" value="${toTimeInput(db.end)}" aria-label="Hora fin">
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">Color</div>
+      <div class="color-row">
+        ${PALETTE.map(c => `<span class="color-swatch${db.color===c?' sel':''}" style="background:${c}"
+          onclick="pickDraftColor('${c}')" role="radio" aria-checked="${db.color===c}" aria-label="Color ${c}"></span>`).join('')}
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-save" onclick="saveDraft()">CREAR ACTIVIDAD</button>
+      <button class="btn-del" onclick="cancelDraft()" aria-label="Cancelar">✕</button>
+    </div>
+  </div>
+</div>`;
+  }
   
   list.innerHTML = html;
+
+  // Auto-focus draft name input
+  if (draftBlock) {
+    setTimeout(() => {
+      const ni = document.getElementById('n-draft');
+      if (ni) { ni.focus(); ni.select(); }
+    }, 60);
+  }
 
   updateProgress();
   updateFreeTime();
@@ -1602,18 +1652,47 @@ function toggleComplete(e, id) {
 }
 
 function addBlock() {
-  const b = { id: nextId++, name: 'Nueva actividad', start: '12:00', end: '13:00', color: '#9B8EE8', completed: false };
+  if (draftBlock) return; // already creating one
+  openId = null;
+  draftBlock = { name: '', start: '12:00', end: '13:00', color: '#9B8EE8' };
+  render();
+  setTimeout(() => {
+    const el = document.getElementById('ed-draft');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 80);
+}
+
+function saveDraft() {
+  const name = document.getElementById('n-draft').value.trim();
+  const s = document.getElementById('s-draft').value;
+  const e = document.getElementById('e-draft').value;
+  if (!name) { showToast('El nombre no puede estar vacío'); return; }
+  const b = {
+    id: nextId++,
+    name: name,
+    start: fromTimeInput(s),
+    end: fromTimeInput(e),
+    color: draftBlock.color,
+    completed: false
+  };
   blocks.push(b);
-  openId = b.id;
+  draftBlock = null;
   sortBlocks();
   save();
   render();
-  setTimeout(() => {
-    const el = document.getElementById(`ed-${b.id}`);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    const ni = document.getElementById(`n-${b.id}`);
-    if (ni) { ni.select(); }
-  }, 80);
+  showToast(name + ' creado ✓');
+}
+
+function cancelDraft() {
+  draftBlock = null;
+  render();
+}
+
+function pickDraftColor(color) {
+  if (draftBlock) {
+    draftBlock.color = color;
+    render();
+  }
 }
 
 function addTemplate(name, start, end, color) {
