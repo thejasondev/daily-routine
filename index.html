@@ -121,13 +121,26 @@ body {
   background: none;
   border: none;
   color: var(--text-dim);
-  font-size: 15px;
   cursor: pointer;
-  transition: color 0.2s, transform 0.2s;
+  transition: color 0.2s, transform 0.2s, opacity 0.2s;
   -webkit-tap-highlight-color: transparent;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.btn-icon:active { transform: scale(0.9); }
+.btn-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.btn-icon:active { transform: scale(0.88); }
 .btn-icon.active { color: var(--accent); }
+.btn-icon:hover { color: var(--text-muted); }
 
 /* ── DAY SELECTOR ── */
 .day-selector {
@@ -834,11 +847,19 @@ body {
       <span class="logo-text">Daily Routine</span>
     </div>
     <div class="header-actions">
-      <div style="display:flex;gap:12px;">
-        <button class="btn-icon" id="btnSettings" aria-label="Ajustes" onclick="openSettings()">⚙️</button>
-        <button class="btn-icon" id="btnStats" aria-label="Estadísticas" onclick="openStats()">📊</button>
-        <button class="btn-icon" id="btnViewToggle" aria-label="Cambiar vista" onclick="toggleView()">⏐</button>
-        <button class="btn-icon" id="btnNotif" aria-label="Notificaciones" onclick="toggleNotif()">🔕</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-icon" id="btnSettings" aria-label="Ajustes" onclick="openSettings()">
+          <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="btn-icon" id="btnStats" aria-label="Estadísticas" onclick="openStats()">
+          <svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+        </button>
+        <button class="btn-icon" id="btnViewToggle" aria-label="Cambiar vista" onclick="toggleView()">
+          <svg viewBox="0 0 24 24" id="viewIcon"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+        <button class="btn-icon" id="btnNotif" aria-label="Notificaciones" onclick="toggleNotif()">
+          <svg viewBox="0 0 24 24" id="notifIcon"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23" id="notifSlash" style="display:none"/></svg>
+        </button>
       </div>
       <div class="header-date" id="headerDate"></div>
     </div>
@@ -1201,23 +1222,35 @@ let notifTimeouts = [];
 
 function updateNotifUI() {
   const btn = document.getElementById('btnNotif');
+  const slash = document.getElementById('notifSlash');
   if (!btn) return;
-  if (notifEnabled && Notification.permission === 'granted') {
-    btn.textContent = '🔔';
+  const isOn = notifEnabled && ('Notification' in window) && Notification.permission === 'granted';
+  if (isOn) {
     btn.classList.add('active');
+    if (slash) slash.style.display = 'none';
   } else {
-    btn.textContent = '🔕';
     btn.classList.remove('active');
+    if (slash) slash.style.display = '';
   }
 }
 
 async function toggleNotif() {
+  // iOS Safari check: Notification API only available in PWA mode on iOS 16.4+
   if (!('Notification' in window)) {
-    showToast('Tu navegador no soporta notificaciones');
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      showToast('En iOS, instala la app desde Safari (Añadir a inicio) para notificaciones');
+    } else {
+      showToast('Tu navegador no soporta notificaciones');
+    }
     return;
   }
   if (!notifEnabled || Notification.permission !== 'granted') {
     let p = Notification.permission;
+    if (p === 'denied') {
+      showToast('Permiso bloqueado. Revisa los ajustes del navegador');
+      return;
+    }
     if (p !== 'granted') {
       p = await Notification.requestPermission();
     }
@@ -1232,7 +1265,7 @@ async function toggleNotif() {
   } else {
     notifEnabled = false;
     localStorage.setItem('dailyroutine_notif', '0');
-    showToast('Notificaciones silenciadas');
+    showToast('Notificaciones desactivadas');
     clearNotifications();
   }
   updateNotifUI();
@@ -1284,17 +1317,25 @@ function scheduleNotifications() {
 }
 
 function sendNotification(title, options) {
-  if ('serviceWorker' in navigator) {
+  const notifOpts = {
+    icon: '/icons/icon-192x192.svg',
+    badge: '/favicon.svg',
+    ...options
+  };
+  // vibrate is not supported on iOS
+  if ('vibrate' in navigator) {
+    notifOpts.vibrate = [200, 100, 200];
+  }
+  
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     navigator.serviceWorker.ready.then(reg => {
-      reg.showNotification(title, {
-        icon: '/icons/icon-192x192.svg',
-        badge: '/favicon.svg',
-        vibrate: [200, 100, 200],
-        ...options
-      });
+      reg.showNotification(title, notifOpts);
+    }).catch(() => {
+      // Fallback to basic Notification
+      try { new Notification(title, notifOpts); } catch(e) {}
     });
   } else {
-    new Notification(title, options);
+    try { new Notification(title, notifOpts); } catch(e) {}
   }
 }
 
@@ -1304,14 +1345,22 @@ let currentView = localStorage.getItem('dailyroutine_view') || 'list'; // 'list'
 function toggleView() {
   currentView = currentView === 'list' ? 'timeline' : 'list';
   localStorage.setItem('dailyroutine_view', currentView);
-  document.getElementById('btnViewToggle').textContent = currentView === 'list' ? '⏐' : '☰';
+  updateViewUI();
   openId = null;
+  draftBlock = null;
   render();
 }
 
 function updateViewUI() {
-  const btn = document.getElementById('btnViewToggle');
-  if (btn) btn.textContent = currentView === 'list' ? '⏐' : '☰';
+  const icon = document.getElementById('viewIcon');
+  if (!icon) return;
+  if (currentView === 'timeline') {
+    // Show grid/calendar icon when in timeline (click to go back to list)
+    icon.innerHTML = '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>';
+  } else {
+    // Show list icon when in list (click to go to timeline)
+    icon.innerHTML = '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>';
+  }
 }
 
 function editFromTimeline(id) {
@@ -2012,6 +2061,13 @@ setInterval(() => {
     scheduleNotifications();
   }
 }, 60000);
+
+// Reschedule notifications when app returns to foreground (critical for iOS/mobile)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && notifEnabled) {
+    scheduleNotifications();
+  }
+});
 </script>
 </body>
 </html>
